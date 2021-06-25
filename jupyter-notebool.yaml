@@ -64,6 +64,7 @@ Resources:
                   - rekognition:*
                   - comprehend:*
                   - transcribe:*
+                  - polly:*
                 Effect: Allow
                 Resource: '*'
               - Action:
@@ -77,6 +78,11 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !Sub 'arn:aws:s3:::${LabBucket}/*'
+              - Action:
+                  - iam:PassRole
+                Effect: Allow
+                Resource:
+                  - !GetAtt ComprehendRole.Arn
 Outputs:
   NotebookInstanceId:
     Value: !Ref NotebookInstance
