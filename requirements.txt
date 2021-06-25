@@ -1,0 +1,6 @@
+boto3
+matplotlib
+requests
+pillow
+pyspark
+IPython

@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudFormation used to create an instance of SageMake Notebook and create a Role with the required permissions.
+Resources:
+  LabBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'aws-ai-services-id-${AWS::AccountId}'
+  ComprehendRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: comprehend.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/ComprehendDataAccessRolePolicy
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::${LabBucket}'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${LabBucket}/*'
+  NotebookInstance:
+    Type: AWS::SageMaker::NotebookInstance
+    Properties:
+      DefaultCodeRepository: https://github.com/ferroh-aws/jupyter-notebooks-aiml.git
+      DirectInternetAccess: Enabled
+      NotebookInstanceName: ImmersionDay
+      InstanceType: "ml.t3.medium"
+      RoleArn: !GetAtt NotebookRole.Arn
+  NotebookRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: 'root'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - rekognition:*
+                  - comprehend:*
+                  - transcribe:*
+                Effect: Allow
+                Resource: '*'
+              - Action:
+                  - s3:ListBucket
+                Effect: Allow
+                Resource:
+                  - !Sub 'arn:aws:s3:::${LabBucket}'
+              - Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Effect: Allow
+                Resource:
+                  - !Sub 'arn:aws:s3:::${LabBucket}/*'
+Outputs:
+  NotebookInstanceId:
+    Value: !Ref NotebookInstance
+  ComprehendRoleArn:
+    Value: !GetAtt ComprehendRole.Arn
+  LabBucket:
+    Value: !Ref LabBucket
